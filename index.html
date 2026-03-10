@@ -150,6 +150,87 @@
     .bar-chart { gap:2px; }
     .bar-label { font-size:7px; }
   }
+
+  /* ===== MISS REASON MODAL ===== */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    backdrop-filter:blur(4px); opacity:0; pointer-events:none; transition:opacity 0.2s;
+  }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:24px; width:100%; max-width:420px; position:relative;
+    transform:translateY(16px); transition:transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform:translateY(0); }
+  .modal-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; margin-bottom:4px; }
+  .modal-sub { font-size:12px; color:var(--muted); margin-bottom:18px; line-height:1.5; }
+  .modal-habit-name { color:var(--accent); }
+
+  .reason-type-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .reason-type-btn {
+    padding:12px 10px; border-radius:10px; border:2px solid var(--border);
+    background:transparent; color:var(--text); font-family:'DM Sans',sans-serif;
+    font-size:13px; font-weight:500; cursor:pointer; transition:all 0.18s; text-align:center;
+  }
+  .reason-type-btn:hover { border-color:var(--muted); }
+  .reason-type-btn.selected-legit { border-color:var(--accent2); background:#0e1e1e; color:var(--accent2); }
+  .reason-type-btn.selected-neg   { border-color:var(--accent3); background:#1e0e0e; color:var(--accent3); }
+
+  .reason-input-wrap { margin-bottom:16px; }
+  .reason-input-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+  .reason-textarea {
+    width:100%; background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px;
+    resize:none; outline:none; transition:border-color 0.2s;
+  }
+  .reason-textarea:focus { border-color:var(--accent); }
+
+  .modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+  .modal-btn {
+    padding:9px 20px; border-radius:8px; border:none; font-family:'DM Sans',sans-serif;
+    font-size:13px; font-weight:600; cursor:pointer; transition:all 0.18s;
+  }
+  .modal-btn-cancel { background:var(--surface); color:var(--muted); }
+  .modal-btn-cancel:hover { color:var(--text); }
+  .modal-btn-save { background:var(--accent); color:#000; }
+  .modal-btn-save:hover { background:#ffd060; }
+
+  /* Miss reason tag on habit row */
+  .miss-tag {
+    font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px;
+    cursor:pointer; transition:all 0.18s; white-space:nowrap;
+  }
+  .miss-tag-neg   { background:#2e0e0e; color:var(--accent3); border:1px solid #5a1a1a; }
+  .miss-tag-legit { background:#0e1a1a; color:var(--accent2); border:1px solid #1a3a3a; }
+  .miss-tag-none  { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+  .miss-tag-neg:hover { border-color:var(--accent3); }
+  .miss-tag-legit:hover { border-color:var(--accent2); }
+  .miss-tag-none:hover  { border-color:var(--muted); }
+
+  /* Red flag counter badge */
+  .redflag-badge {
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+    padding:3px 10px; border-radius:20px; background:#2e0e0e; color:var(--accent3);
+    border:1px solid #5a1a1a; font-family:'DM Mono',monospace;
+  }
+
+  /* Discipline alert card */
+  .discipline-alert {
+    background:linear-gradient(135deg,#1e0808,#2a0a0a);
+    border:1px solid var(--accent3); border-radius:12px; padding:18px 20px; margin-bottom:12px;
+  }
+  .discipline-alert-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .discipline-alert-title { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--accent3); letter-spacing:1px; }
+  .discipline-alert-quote { font-size:13px; color:#e07070; font-style:italic; line-height:1.6; margin-bottom:10px; }
+  .discipline-alert-reasons { display:flex; flex-direction:column; gap:6px; }
+  .neg-reason-item { font-size:12px; color:var(--muted); background:#1a0808; border-radius:6px; padding:7px 10px; border-left:3px solid var(--accent3); }
+  .neg-reason-item .nr-habit { color:var(--accent3); font-weight:600; }
+  .neg-reason-item .nr-count { font-family:'DM Mono',monospace; font-size:10px; }
+
+  /* Red flag dots on calendar */
+  .cal-cell .rf-dot { width:4px; height:4px; border-radius:50%; background:var(--accent3); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -166,6 +247,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showView('calendar')">📅 Calendar</button>
     <button class="nav-tab" onclick="showView('trends')">📈 Trends</button>
+    <button class="nav-tab" onclick="showView('redflags')">🚩 Red Flags</button>
   </div>
 
   <!-- Stats row -->
@@ -225,6 +307,36 @@
 
   </div>
 
+  <!-- RED FLAGS VIEW -->
+  <div class="trends-view" id="redflagsView">
+    <div id="redflagsBlock"></div>
+  </div>
+
+</div>
+
+<!-- MISS REASON MODAL -->
+<div class="modal-overlay" id="missModal">
+  <div class="modal">
+    <div class="modal-title">Why was it missed?</div>
+    <div class="modal-sub">Habit: <span class="modal-habit-name" id="modalHabitName"></span></div>
+    <div class="reason-input-label" style="margin-bottom:8px;">Type of miss</div>
+    <div class="reason-type-row">
+      <button class="reason-type-btn" id="btnLegit" onclick="selectReasonType('legit')">
+        ✅ Genuine Reason<br><span style="font-size:11px;font-weight:400;color:var(--muted)">Could not be avoided</span>
+      </button>
+      <button class="reason-type-btn" id="btnNeg" onclick="selectReasonType('negligence')">
+        🚩 Negligence<br><span style="font-size:11px;font-weight:400;color:var(--muted)">I chose not to do it</span>
+      </button>
+    </div>
+    <div class="reason-input-wrap">
+      <div class="reason-input-label">Describe the reason</div>
+      <textarea class="reason-textarea" id="reasonText" rows="3" placeholder="What happened? Be honest with yourself..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="closeMissModal()">Cancel</button>
+      <button class="modal-btn modal-btn-save" onclick="saveMissReason()">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -464,16 +576,30 @@ function openDay(y,m,d) {
     `${dayNames[dow]}, ${months[m]} ${d}, ${y}`;
 
   if(!data[selectedDate]) data[selectedDate]={};
+  if(!data[selectedDate].__reasons) data[selectedDate].__reasons={};
 
+  const isPast = !isFuture(y,m,d);
   let html = '';
   HABITS.forEach(h=>{
     const checked = !!data[selectedDate][h.id];
+    const reason  = data[selectedDate].__reasons[h.id];
+    let missTagHtml = '';
+    if(!checked && isPast) {
+      if(reason) {
+        const tagCls = reason.type==='negligence' ? 'miss-tag-neg' : 'miss-tag-legit';
+        const tagLbl = reason.type==='negligence' ? '🚩 Negligence' : '✅ Legit';
+        missTagHtml = `<span class="miss-tag ${tagCls}" onclick="openMissModal('${h.id}','${h.name.replace(/'/g,"\\'")}',event)" title="${reason.text}">${tagLbl}</span>`;
+      } else {
+        missTagHtml = `<span class="miss-tag miss-tag-none" onclick="openMissModal('${h.id}','${h.name.replace(/'/g,"\\'")}',event)">+ reason</span>`;
+      }
+    }
     html+=`<div class="habit-row">
       <div class="habit-check ${checked?'checked':''}" onclick="toggleHabit('${h.id}')">
         <svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="habit-emoji">${h.emoji}</div>
       <div class="habit-name">${h.name}</div>
+      ${missTagHtml}
     </div>`;
   });
 
@@ -606,30 +732,220 @@ function renderTrends() {
   document.getElementById('habitBreakdown').innerHTML = bkHtml;
 }
 
+// ─── MISS REASON MODAL ───────────────────────────────────────
+let modalHabitId = null;
+let modalReasonType = null;
+
+function openMissModal(habitId, habitName, e) {
+  e.stopPropagation();
+  if(!selectedDate) return;
+  modalHabitId = habitId;
+  modalReasonType = null;
+  document.getElementById('modalHabitName').textContent = habitName;
+  document.getElementById('btnLegit').className = 'reason-type-btn';
+  document.getElementById('btnNeg').className   = 'reason-type-btn';
+  // Pre-fill if already saved
+  const existing = data[selectedDate]?.__reasons?.[habitId];
+  if(existing) {
+    selectReasonType(existing.type);
+    document.getElementById('reasonText').value = existing.text || '';
+  } else {
+    document.getElementById('reasonText').value = '';
+  }
+  document.getElementById('missModal').classList.add('open');
+}
+
+function selectReasonType(type) {
+  modalReasonType = type;
+  document.getElementById('btnLegit').className = 'reason-type-btn' + (type==='legit'?' selected-legit':'');
+  document.getElementById('btnNeg').className   = 'reason-type-btn' + (type==='negligence'?' selected-neg':'');
+}
+
+function closeMissModal() {
+  document.getElementById('missModal').classList.remove('open');
+  modalHabitId = null; modalReasonType = null;
+}
+
+async function saveMissReason() {
+  if(!modalHabitId || !modalReasonType) { alert('Please select the type of miss.'); return; }
+  const text = document.getElementById('reasonText').value.trim();
+  if(!text) { alert('Please describe the reason.'); return; }
+  if(!data[selectedDate].__reasons) data[selectedDate].__reasons = {};
+  data[selectedDate].__reasons[modalHabitId] = { type: modalReasonType, text, savedAt: new Date().toISOString() };
+  await saveData(data);
+  closeMissModal();
+  // Re-open day panel to reflect changes
+  const parts = selectedDate.split('-');
+  openDay(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  renderCalendar();
+  renderStats();
+}
+
+// Close modal on overlay click
+document.getElementById('missModal').addEventListener('click', function(e){ if(e.target===this) closeMissModal(); });
+
+// ─── RED FLAG COUNT helper ────────────────────────────────────
+function getNegligenceCount(habitId) {
+  let count = 0;
+  Object.values(data).forEach(day => {
+    if(day.__reasons && day.__reasons[habitId] && day.__reasons[habitId].type === 'negligence') count++;
+  });
+  return count;
+}
+
+function getAllNegligences() {
+  // Returns [{date, habitId, habitName, text}]
+  const list = [];
+  Object.entries(data).forEach(([date, day]) => {
+    if(!day.__reasons) return;
+    Object.entries(day.__reasons).forEach(([hid, r]) => {
+      if(r.type === 'negligence') {
+        const habit = HABITS.find(h=>h.id===hid);
+        list.push({ date, habitId:hid, habitName: habit?habit.name:hid, emoji: habit?habit.emoji:'❓', text:r.text, savedAt:r.savedAt });
+      }
+    });
+  });
+  return list.sort((a,b)=>b.date.localeCompare(a.date));
+}
+
+// ─── RED FLAGS VIEW ──────────────────────────────────────────
+const DISCIPLINE_QUOTES = [
+  "\"We are what we repeatedly do. Excellence, then, is not an act, but a habit.\" — Aristotle",
+  "\"Discipline is choosing between what you want now and what you want most.\" — Abraham Lincoln",
+  "\"The Resistance will tell you anything to keep you from doing your work. It will perjure, falsify, seduce, bully, cajole.\" — Steven Pressfield",
+  "\"Don't count on motivation. Count on discipline.\" — Jocko Willink",
+  "\"You have to be willing to be uncomfortable. That's where growth lives.\" — David Goggins",
+  "\"Stop lying to yourself. When we deny our stories, they define us.\" — Brené Brown",
+  "\"Every time you choose comfort over discipline, you are voting for the person you don't want to become.\" — James Clear",
+];
+
+function renderRedFlags() {
+  const negs = getAllNegligences();
+
+  // Group by habit
+  const byHabit = {};
+  negs.forEach(n => {
+    if(!byHabit[n.habitId]) byHabit[n.habitId] = { name:n.habitName, emoji:n.emoji, items:[] };
+    byHabit[n.habitId].items.push(n);
+  });
+
+  let html = '';
+
+  if(negs.length === 0) {
+    html = `<div class="insight-card" style="border-color:var(--accent4)">
+      <div class="insight-icon">🏆</div>
+      <div>
+        <div class="insight-title" style="color:var(--accent4)">Zero Negligence Recorded</div>
+        <div class="insight-desc">No red flags found. Either you're crushing it, or you haven't logged your missed habits yet. Keep it that way!</div>
+      </div>
+    </div>`;
+  } else {
+    // Discipline alert if 3+ total negligences
+    const quote = DISCIPLINE_QUOTES[negs.length % DISCIPLINE_QUOTES.length];
+    if(negs.length >= 3) {
+      html += `<div class="discipline-alert">
+        <div class="discipline-alert-header">
+          <span style="font-size:28px">🚨</span>
+          <div class="discipline-alert-title">YOU ARE BEING UNDISCIPLINED</div>
+        </div>
+        <div class="discipline-alert-quote">${quote}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent3);margin-bottom:8px;">
+          ${negs.length} negligence${negs.length>1?'s':''} recorded across your habits
+        </div>
+      </div>`;
+    }
+
+    // Per-habit breakdown
+    html += `<div class="section-label">Negligence by habit</div>`;
+    Object.entries(byHabit).sort((a,b)=>b[1].items.length-a[1].items.length).forEach(([hid,h])=>{
+      const count = h.items.length;
+      const alertLevel = count>=5?'var(--accent3)':count>=3?'#e07030':'var(--muted)';
+      html += `<div class="bar-chart-wrap" style="margin-bottom:12px;${count>=3?'border-color:#5a1a1a':''}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:20px">${h.emoji}</span>
+          <span style="font-size:14px;font-weight:600;flex:1">${h.name}</span>
+          <span class="redflag-badge">🚩 ${count} miss${count>1?'es':''}</span>
+        </div>
+        ${h.items.map(item=>`
+          <div class="neg-reason-item">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span class="nr-habit">🚩 ${item.date}</span>
+              <span class="nr-count">${item.emoji}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text)">"${item.text}"</div>
+          </div>`).join('')}
+      </div>`;
+    });
+
+    // Timeline of all negligences
+    html += `<div class="section-label">Full negligence timeline</div>`;
+    html += `<div class="bar-chart-wrap">`;
+    negs.forEach(n=>{
+      html+=`<div class="habit-stat-row">
+        <div style="font-size:18px">${n.emoji}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--accent3)">${n.habitName}</div>
+          <div style="font-size:11px;color:var(--muted)">${n.date} · "${n.text}"</div>
+        </div>
+        <span class="redflag-badge">🚩</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Always show legit reasons too
+  const legits = [];
+  Object.entries(data).forEach(([date, day]) => {
+    if(!day.__reasons) return;
+    Object.entries(day.__reasons).forEach(([hid, r]) => {
+      if(r.type === 'legit') {
+        const habit = HABITS.find(h=>h.id===hid);
+        legits.push({ date, habitName: habit?habit.name:hid, emoji: habit?habit.emoji:'❓', text:r.text });
+      }
+    });
+  });
+  if(legits.length>0) {
+    html += `<div class="section-label">Genuine reasons (excused)</div><div class="bar-chart-wrap">`;
+    legits.sort((a,b)=>b.date.localeCompare(a.date)).forEach(l=>{
+      html+=`<div class="habit-stat-row">
+        <div style="font-size:18px">${l.emoji}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--accent2)">${l.habitName}</div>
+          <div style="font-size:11px;color:var(--muted)">${l.date} · "${l.text}"</div>
+        </div>
+        <span style="font-size:11px;color:var(--accent2);background:#0e1e1e;padding:2px 8px;border-radius:20px;border:1px solid #1a3a3a;">✅ excused</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('redflagsBlock').innerHTML = html;
+}
+
 // ─── VIEW SWITCHER ───────────────────────────────────────────
 function showView(v) {
   currentView = v;
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{
-    t.classList.toggle('active', (i===0&&v==='calendar')||(i===1&&v==='trends'));
+    t.classList.toggle('active', (i===0&&v==='calendar')||(i===1&&v==='trends')||(i===2&&v==='redflags'));
   });
   document.getElementById('calendarView').classList.toggle('active', v==='calendar');
   document.getElementById('trendsView').classList.toggle('active', v==='trends');
+  document.getElementById('redflagsView').classList.toggle('active', v==='redflags');
   if(v==='trends') renderTrends();
+  if(v==='redflags') renderRedFlags();
 }
 
 // ─── INIT ────────────────────────────────────────────────────
 async function init() {
-  // Show loading state immediately with cached data
   try { data = JSON.parse(localStorage.getItem('habitData') || '{}'); } catch { data = {}; }
   renderStats();
   renderCalendar();
-
-  // Then fetch fresh from Supabase and re-render
   data = await loadDataRemote();
   localStorage.setItem('habitData', JSON.stringify(data));
   renderStats();
   renderCalendar();
-  if (currentView === 'trends') renderTrends();
+  if(currentView==='trends') renderTrends();
+  if(currentView==='redflags') renderRedFlags();
 }
 init();
 </script>
