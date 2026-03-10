@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a3d;
+    --accent: #f0c040;
+    --accent2: #40e0c0;
+    --accent3: #e05050;
+    --accent4: #40c070;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0; opacity:0.4;
+  }
+  .container { max-width:820px; margin:0 auto; padding:32px 20px 80px; position:relative; z-index:1; }
+
+  /* Header */
+  .header { text-align:center; margin-bottom:32px; }
+  .eyebrow { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:4px; color:var(--accent); text-transform:uppercase; margin-bottom:8px; }
+  .header h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(48px,10vw,80px); letter-spacing:3px; line-height:1; }
+  .header h1 span { color:var(--accent); }
+  .header .subtitle { margin-top:10px; color:var(--muted); font-size:14px; font-weight:300; }
+
+  /* Nav tabs */
+  .nav-tabs { display:flex; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:4px; margin-bottom:28px; width:fit-content; }
+  .nav-tab { padding:9px 22px; border:none; background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; border-radius:7px; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+  .nav-tab.active { background:var(--accent); color:#000; }
+
+  /* Stat cards row */
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:24px; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 14px; }
+  .stat-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+  .stat-value { font-family:'Bebas Neue',sans-serif; font-size:32px; line-height:1; }
+  .stat-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+  .c-yellow { color:var(--accent); }
+  .c-teal   { color:var(--accent2); }
+  .c-green  { color:var(--accent4); }
+  .c-red    { color:var(--accent3); }
+
+  /* Trend badge */
+  .trend-badge { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; margin-top:6px; }
+  .trend-up    { background:#1a2e1a; color:var(--accent4); }
+  .trend-down  { background:#2e1a1a; color:var(--accent3); }
+  .trend-flat  { background:#1a1a2e; color:var(--accent2); }
+  .trend-great { background:#2e2a10; color:var(--accent); }
+
+  /* Section label */
+  .section-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin:24px 0 12px; padding-left:4px; }
+
+  /* ===== CALENDAR ===== */
+  .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .cal-title { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; color:var(--text); }
+  .cal-nav { display:flex; gap:8px; }
+  .cal-btn { background:var(--card); border:1px solid var(--border); color:var(--text); width:34px; height:34px; border-radius:8px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .cal-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal-day-name { text-align:center; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:1px; padding:4px 0 8px; }
+  .cal-cell { aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; font-weight:500; cursor:pointer; border:1px solid transparent; transition:all 0.18s; position:relative; background:var(--card); }
+  .cal-cell:hover { border-color:var(--accent); }
+  .cal-cell.empty { background:transparent; border:none; cursor:default; }
+  .cal-cell.today { border-color:var(--accent2) !important; }
+  .cal-cell .day-num { font-family:'DM Mono',monospace; font-size:11px; }
+  .cal-cell .day-pct { font-size:9px; margin-top:2px; font-weight:600; }
+
+  /* Completion heat */
+  .cal-cell.pct-0   { background:#16161e; color:var(--muted); }
+  .cal-cell.pct-low { background:#1e1a10; color:#907030; }
+  .cal-cell.pct-mid { background:#162010; color:#60a040; }
+  .cal-cell.pct-high{ background:#0e2010; color:var(--accent4); }
+  .cal-cell.pct-full{ background:linear-gradient(135deg,#1a3010,#0e2818); border-color:var(--accent4) !important; color:var(--accent4); }
+  .cal-cell.future  { background:#111118; color:#333350; cursor:default; }
+
+  /* Legend */
+  .legend { display:flex; gap:16px; margin-top:12px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+  .legend-dot { width:10px; height:10px; border-radius:3px; }
+
+  /* ===== DAY DETAIL PANEL ===== */
+  .day-panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:20px; display:none; }
+  .day-panel.open { display:block; }
+  .day-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .day-panel-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; color:var(--accent); }
+  .day-panel-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px; line-height:1; }
+  .day-panel-close:hover { color:var(--accent3); }
+
+  .habit-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .habit-row:last-child { border-bottom:none; }
+  .habit-check { width:20px; height:20px; border-radius:5px; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:all 0.18s; }
+  .habit-check.checked { background:var(--accent4); border-color:var(--accent4); }
+  .habit-check svg { opacity:0; transition:opacity 0.15s; }
+  .habit-check.checked svg { opacity:1; }
+  .habit-name { flex:1; font-size:13px; font-weight:500; }
+  .habit-emoji { font-size:18px; }
+
+  /* ===== TRENDS ===== */
+  .trends-view { display:none; }
+  .trends-view.active { display:block; }
+  .calendar-view { display:none; }
+  .calendar-view.active { display:block; }
+
+  .bar-chart-wrap { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
+  .bar-chart-title { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; }
+  .bar-chart { display:flex; align-items:flex-end; gap:5px; height:120px; }
+  .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .bar { width:100%; border-radius:4px 4px 0 0; transition:height 0.4s cubic-bezier(.4,0,.2,1); min-height:2px; position:relative; cursor:pointer; }
+  .bar:hover { filter:brightness(1.2); }
+  .bar-label { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); text-align:center; white-space:nowrap; overflow:hidden; }
+  .bar-val { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); }
+
+  .insight-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:10px; display:flex; gap:14px; align-items:flex-start; }
+  .insight-icon { font-size:24px; flex-shrink:0; }
+  .insight-title { font-size:14px; font-weight:600; margin-bottom:3px; }
+  .insight-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+
+  /* Weekly heatmap row */
+  .week-heatmap { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:6px; }
+  .wh-cell { height:28px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:9px; }
+
+  /* Habit-wise breakdown */
+  .habit-stat-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .habit-stat-row:last-child { border-bottom:none; }
+  .habit-stat-name { flex:1; font-size:13px; }
+  .habit-stat-bar-wrap { width:120px; height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
+  .habit-stat-bar { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent2),var(--accent4)); transition:width 0.5s ease; }
+  .habit-stat-pct { font-family:'DM Mono',monospace; font-size:11px; color:var(--accent2); min-width:36px; text-align:right; }
+
+  @media(max-width:520px) {
+    .stats-row { grid-template-columns:repeat(2,1fr); }
+    .bar-chart { gap:2px; }
+    .bar-label { font-size:7px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">// track your discipline</div>
+    <h1>HABIT <span>TRACKER</span></h1>
+    <div class="subtitle">Every day counts. Every streak matters.</div>
+    <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:11px;" id="syncBadge">🔄 Loading...</div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('calendar')">📅 Calendar</button>
+    <button class="nav-tab" onclick="showView('trends')">📈 Trends</button>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- CALENDAR VIEW -->
+  <div class="calendar-view active" id="calendarView">
+    <div class="cal-header">
+      <div class="cal-title" id="calMonthTitle"></div>
+      <div class="cal-nav">
+        <button class="cal-btn" onclick="changeMonth(-1)">‹</button>
+        <button class="cal-btn" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#16161e;border:1px solid #2a2a3d"></div>No data</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1e1a10"></div>1–39%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#162010"></div>40–69%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0e2010"></div>70–99%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1a3010,#0e2818);border:1px solid #40c070"></div>100% 🔥</div>
+    </div>
+
+    <!-- Day detail panel -->
+    <div class="day-panel" id="dayPanel">
+      <div class="day-panel-header">
+        <div class="day-panel-title" id="dayPanelTitle"></div>
+        <button class="day-panel-close" onclick="closePanel()">✕</button>
+      </div>
+      <div id="dayPanelHabits"></div>
+    </div>
+  </div>
+
+  <!-- TRENDS VIEW -->
+  <div class="trends-view" id="trendsView">
+
+    <div class="section-label">Last 30 days — daily completion %</div>
+    <div class="bar-chart-wrap">
+      <div class="bar-chart-title">COMPLETION RATE BY DAY</div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+
+    <div class="section-label">Weekly averages</div>
+    <div class="bar-chart-wrap">
+      <div class="bar-chart-title">WEEKLY PERFORMANCE</div>
+      <div class="bar-chart" id="weeklyChart"></div>
+    </div>
+
+    <div class="section-label">Insights</div>
+    <div id="insightsBlock"></div>
+
+    <div class="section-label">Habit-wise completion</div>
+    <div class="bar-chart-wrap">
+      <div class="bar-chart-title">EACH HABIT — ALL TIME</div>
+      <div id="habitBreakdown"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ─── HABITS LIST ────────────────────────────────────────────
+const HABITS = [
+  { id:'walk',      name:'Morning Walk',       emoji:'🚶' },
+  { id:'exercise',  name:'Exercise',            emoji:'💪' },
+  { id:'brush',     name:'Brush & Freshen',     emoji:'🪥' },
+  { id:'shower',    name:'Shower',              emoji:'🚿' },
+  { id:'breakfast', name:'Breakfast',           emoji:'🍳' },
+  { id:'study1',    name:'Study Block 1',       emoji:'📚' },
+  { id:'deepwork',  name:'Deep Work (Office)',  emoji:'🐸' },
+  { id:'lunch',     name:'Lunch Break',         emoji:'🍱' },
+  { id:'work2',     name:'Work Block 2',        emoji:'💼' },
+  { id:'study2',    name:'Study Block 2',       emoji:'📖' },
+  { id:'dinner',    name:'Dinner',              emoji:'🍽️' },
+  { id:'nightprep', name:'Night Prep Ritual',   emoji:'📋' },
+];
+
+// ─── SUPABASE CONFIG ────────────────────────────────────────
+const SUPA_URL = 'https://dyhooqizqedgqqmyijrs.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aG9vcWl6cWVkZ3FxbXlpanJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMjI2NTYsImV4cCI6MjA4ODY5ODY1Nn0.F8FXM_8UM5zJ5JJje7zJyDBIpbSYUjlkm1o89WdaUcw';
+const HEADERS  = { 'Content-Type':'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY };
+
+// ─── SYNC STATUS UI ─────────────────────────────────────────
+function setSyncStatus(state) {
+  // state: 'saving' | 'saved' | 'error' | 'loading'
+  let el = document.getElementById('syncBadge');
+  const icons = { saving:'⏳', saved:'☁️ Saved', error:'⚠️ Offline', loading:'🔄 Loading...' };
+  const cols  = { saving:'var(--muted)', saved:'var(--accent4)', error:'var(--accent3)', loading:'var(--accent2)' };
+  if(el) { el.textContent = icons[state]; el.style.color = cols[state]; }
+}
+
+// ─── STORAGE ────────────────────────────────────────────────
+function getDateKey(y,m,d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function todayKey() {
+  const n = new Date();
+  return getDateKey(n.getFullYear(), n.getMonth(), n.getDate());
+}
+
+// Save to Supabase (upsert entire data object)
+async function saveData(d) {
+  // Always keep localStorage as fast local cache
+  localStorage.setItem('habitData', JSON.stringify(d));
+  setSyncStatus('saving');
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/habit_data?id=eq.user1`, {
+      method: 'PATCH',
+      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ data: d, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error(res.status);
+    setSyncStatus('saved');
+  } catch(e) {
+    setSyncStatus('error');
+    console.warn('Supabase save failed, using localStorage fallback', e);
+  }
+}
+
+// Load from Supabase, fall back to localStorage
+async function loadDataRemote() {
+  setSyncStatus('loading');
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/habit_data?id=eq.user1&select=data`, {
+      headers: HEADERS
+    });
+    if (!res.ok) throw new Error(res.status);
+    const rows = await res.json();
+    if (rows && rows.length > 0 && rows[0].data) {
+      setSyncStatus('saved');
+      return rows[0].data;
+    }
+  } catch(e) {
+    setSyncStatus('error');
+    console.warn('Supabase load failed, using localStorage fallback', e);
+  }
+  // Fallback
+  try { return JSON.parse(localStorage.getItem('habitData') || '{}'); } catch { return {}; }
+}
+
+// ─── STATE ──────────────────────────────────────────────────
+let data = {};
+let viewMonth = new Date().getMonth();
+let viewYear  = new Date().getFullYear();
+let selectedDate = null;
+let currentView = 'calendar';
+
+// ─── UTILS ──────────────────────────────────────────────────
+function getPct(key) {
+  if (!data[key]) return null;
+  const vals = HABITS.map(h => data[key][h.id] ? 1 : 0);
+  return Math.round(vals.reduce((a,b)=>a+b,0) / HABITS.length * 100);
+}
+
+function getPctClass(pct) {
+  if (pct === null) return 'pct-0';
+  if (pct === 100)  return 'pct-full';
+  if (pct >= 70)    return 'pct-high';
+  if (pct >= 40)    return 'pct-mid';
+  return 'pct-low';
+}
+
+function isToday(y,m,d) {
+  const n = new Date();
+  return n.getFullYear()===y && n.getMonth()===m && n.getDate()===d;
+}
+function isFuture(y,m,d) {
+  const n = new Date(); n.setHours(0,0,0,0);
+  return new Date(y,m,d) > n;
+}
+
+// ─── STATS ROW ──────────────────────────────────────────────
+function renderStats() {
+  const today = new Date();
+  const allKeys = Object.keys(data);
+
+  // Overall completion
+  let totalH=0, doneH=0;
+  allKeys.forEach(k=>{ HABITS.forEach(h=>{ totalH++; if(data[k][h.id]) doneH++; }); });
+  const overallPct = totalH ? Math.round(doneH/totalH*100) : 0;
+
+  // Streak
+  let streak = 0;
+  for (let i=0; i<=365; i++) {
+    const d = new Date(today); d.setDate(today.getDate()-i);
+    const k = getDateKey(d.getFullYear(),d.getMonth(),d.getDate());
+    const p = getPct(k);
+    if (p !== null && p >= 80) streak++;
+    else if (i > 0) break;
+  }
+
+  // Best day
+  let bestPct = 0;
+  allKeys.forEach(k=>{ const p=getPct(k); if(p>bestPct) bestPct=p; });
+
+  // 7-day avg
+  let weekTotal=0, weekCount=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const k=getDateKey(d.getFullYear(),d.getMonth(),d.getDate());
+    const p=getPct(k);
+    if(p!==null){weekTotal+=p;weekCount++;}
+  }
+  const weekAvg = weekCount ? Math.round(weekTotal/weekCount) : 0;
+
+  // Trend: compare last 7 vs prev 7
+  let prev7=0, prev7c=0;
+  for(let i=7;i<14;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const k=getDateKey(d.getFullYear(),d.getMonth(),d.getDate());
+    const p=getPct(k);
+    if(p!==null){prev7+=p;prev7c++;}
+  }
+  const prev7Avg = prev7c ? Math.round(prev7/prev7c) : 0;
+  const diff = weekAvg - prev7Avg;
+  let trendHtml='';
+  if(diff>=5) trendHtml=`<div class="trend-badge trend-up">▲ +${diff}% improving</div>`;
+  else if(diff<=-5) trendHtml=`<div class="trend-badge trend-down">▼ ${diff}% declining</div>`;
+  else if(weekAvg>=85) trendHtml=`<div class="trend-badge trend-great">★ Excellent</div>`;
+  else trendHtml=`<div class="trend-badge trend-flat">→ Steady</div>`;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Overall</div>
+      <div class="stat-value c-yellow">${overallPct}%</div>
+      <div class="stat-sub">all-time completion</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Streak</div>
+      <div class="stat-value c-teal">${streak}</div>
+      <div class="stat-sub">days ≥80% done</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">7-Day Avg</div>
+      <div class="stat-value c-green">${weekAvg}%</div>
+      ${trendHtml}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Day</div>
+      <div class="stat-value c-yellow">${bestPct}%</div>
+      <div class="stat-sub">peak completion</div>
+    </div>
+  `;
+}
+
+// ─── CALENDAR ────────────────────────────────────────────────
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthTitle').textContent = `${months[viewMonth]} ${viewYear}`;
+
+  const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+  let html = days.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-cell empty"></div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const key = getDateKey(viewYear, viewMonth, d);
+    const pct = getPct(key);
+    const future = isFuture(viewYear, viewMonth, d);
+    const today = isToday(viewYear, viewMonth, d);
+
+    let cls = future ? 'future' : getPctClass(pct);
+    if(today) cls += ' today';
+    const pctLabel = (!future && pct!==null) ? `<div class="day-pct">${pct}%</div>` : '';
+    const star = (!future && pct===100) ? '★' : '';
+
+    html+=`<div class="cal-cell ${cls}" onclick="${future?'':'openDay('+viewYear+','+viewMonth+','+d+')'}">
+      <div class="day-num">${d}${star}</div>
+      ${pctLabel}
+    </div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function changeMonth(dir) {
+  viewMonth += dir;
+  if(viewMonth>11){ viewMonth=0; viewYear++; }
+  if(viewMonth<0){  viewMonth=11; viewYear--; }
+  renderCalendar();
+  closePanel();
+}
+
+// ─── DAY PANEL ───────────────────────────────────────────────
+function openDay(y,m,d) {
+  selectedDate = getDateKey(y,m,d);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dow = new Date(y,m,d).getDay();
+
+  document.getElementById('dayPanelTitle').textContent =
+    `${dayNames[dow]}, ${months[m]} ${d}, ${y}`;
+
+  if(!data[selectedDate]) data[selectedDate]={};
+
+  let html = '';
+  HABITS.forEach(h=>{
+    const checked = !!data[selectedDate][h.id];
+    html+=`<div class="habit-row">
+      <div class="habit-check ${checked?'checked':''}" onclick="toggleHabit('${h.id}')">
+        <svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="habit-emoji">${h.emoji}</div>
+      <div class="habit-name">${h.name}</div>
+    </div>`;
+  });
+
+  document.getElementById('dayPanelHabits').innerHTML = html;
+  document.getElementById('dayPanel').classList.add('open');
+  document.getElementById('dayPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function toggleHabit(id) {
+  if(!selectedDate) return;
+  if(!data[selectedDate]) data[selectedDate]={};
+  data[selectedDate][id] = !data[selectedDate][id];
+  saveData(data);
+  // re-render panel
+  const parts = selectedDate.split('-');
+  openDay(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  renderCalendar();
+  renderStats();
+}
+
+function closePanel() {
+  document.getElementById('dayPanel').classList.remove('open');
+  selectedDate = null;
+}
+
+// ─── TRENDS ──────────────────────────────────────────────────
+function renderTrends() {
+  const today = new Date();
+
+  // Last 30 days bar chart
+  const days30 = [];
+  for(let i=29;i>=0;i--){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const k=getDateKey(d.getFullYear(),d.getMonth(),d.getDate());
+    const p=getPct(k);
+    days30.push({ key:k, pct:p, label:`${d.getDate()}/${d.getMonth()+1}` });
+  }
+
+  let barHtml='';
+  days30.forEach(({pct,label})=>{
+    const h = pct!==null ? Math.max(4, pct) : 4;
+    const col = pct===null ? '#2a2a3d' : pct>=80?'var(--accent4)':pct>=50?'var(--accent2)':'var(--accent3)';
+    barHtml+=`<div class="bar-col">
+      <div class="bar-val">${pct!==null?pct+'':''}</div>
+      <div class="bar" style="height:${h}%;background:${col}" title="${label}: ${pct!==null?pct+'%':'No data'}"></div>
+      <div class="bar-label">${label}</div>
+    </div>`;
+  });
+  document.getElementById('barChart').innerHTML = barHtml;
+
+  // Weekly chart (last 8 weeks)
+  const weeks=[];
+  for(let w=7;w>=0;w--){
+    let sum=0,cnt=0;
+    for(let d=0;d<7;d++){
+      const dt=new Date(today); dt.setDate(today.getDate()-w*7-d);
+      const k=getDateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+      const p=getPct(k);
+      if(p!==null){sum+=p;cnt++;}
+    }
+    const avg=cnt?Math.round(sum/cnt):null;
+    const wkEnd=new Date(today); wkEnd.setDate(today.getDate()-w*7);
+    weeks.push({avg,label:`W${8-w}`});
+  }
+  let wBarHtml='';
+  weeks.forEach(({avg,label},i)=>{
+    const prev = i>0?weeks[i-1].avg:null;
+    const h = avg!==null?Math.max(4,avg):4;
+    let col='#2a2a3d';
+    if(avg!==null){
+      if(prev!==null && avg>prev+5) col='var(--accent4)';
+      else if(prev!==null && avg<prev-5) col='var(--accent3)';
+      else col='var(--accent2)';
+    }
+    const arrow = (avg!==null&&prev!==null) ? (avg>prev+3?'▲':avg<prev-3?'▼':'→') : '';
+    wBarHtml+=`<div class="bar-col">
+      <div class="bar-val">${avg!==null?avg+'%':''}</div>
+      <div class="bar" style="height:${h}%;background:${col}"></div>
+      <div class="bar-label">${label} ${arrow}</div>
+    </div>`;
+  });
+  document.getElementById('weeklyChart').innerHTML = wBarHtml;
+
+  // Insights
+  const last7avg = days30.slice(-7).filter(x=>x.pct!==null).reduce((a,b)=>a+b.pct,0) / Math.max(1,days30.slice(-7).filter(x=>x.pct!==null).length);
+  const prev7avg = days30.slice(-14,-7).filter(x=>x.pct!==null).reduce((a,b)=>a+b.pct,0) / Math.max(1,days30.slice(-14,-7).filter(x=>x.pct!==null).length);
+  const diff = Math.round(last7avg-prev7avg);
+
+  let insights=[];
+  if(diff>=10) insights.push({icon:'🚀',title:'Strong Upward Trend',desc:`You improved by ${diff}% compared to the previous week. Momentum is building — keep going!`,col:'var(--accent4)'});
+  else if(diff>=3) insights.push({icon:'📈',title:'Gradually Improving',desc:`Up ${diff}% from last week. Small consistent gains compound into massive results.`,col:'var(--accent2)'});
+  else if(diff<=-10) insights.push({icon:'⚠️',title:'Declining — Time to Reset',desc:`Down ${Math.abs(diff)}% from last week. Use your night prep ritual and identify what's causing slippage.`,col:'var(--accent3)'});
+  else if(diff<=-3) insights.push({icon:'📉',title:'Slight Dip Detected',desc:`Down ${Math.abs(diff)}% from last week. Don't break the chain — focus on your non-negotiable morning block.`,col:'var(--accent3)'});
+  else insights.push({icon:'⚡',title:'Holding Steady',desc:`Your rate is consistent this week. Consistency is the foundation — now try to push the ceiling.`,col:'var(--accent2)'});
+
+  if(last7avg>=90) insights.push({icon:'🔥',title:'Elite Consistency This Week',desc:`Averaging ${Math.round(last7avg)}% — you are showing up every single day. This is the identity shift Atomic Habits talks about.`,col:'var(--accent)'});
+
+  // Best/worst habit
+  const habitPcts={};
+  HABITS.forEach(h=>{ habitPcts[h.id]={done:0,total:0}; });
+  Object.keys(data).forEach(k=>{ HABITS.forEach(h=>{ habitPcts[h.id].total++; if(data[k][h.id]) habitPcts[h.id].done++; }); });
+  let bestH=null,worstH=null,bestP=0,worstP=101;
+  HABITS.forEach(h=>{
+    const p=habitPcts[h.id].total?Math.round(habitPcts[h.id].done/habitPcts[h.id].total*100):0;
+    if(p>bestP){bestP=p;bestH=h;}
+    if(p<worstP){worstP=p;worstH=h;}
+  });
+  if(bestH) insights.push({icon:bestH.emoji,title:`Strongest Habit: ${bestH.name}`,desc:`You complete this ${bestP}% of the time. Let this habit anchor the others around it.`,col:'var(--accent4)'});
+  if(worstH) insights.push({icon:worstH.emoji,title:`Needs Attention: ${worstH.name}`,desc:`Completion rate is only ${worstP}%. Stack it right after a strong habit to improve it.`,col:'var(--accent3)'});
+
+  document.getElementById('insightsBlock').innerHTML = insights.map(i=>`
+    <div class="insight-card">
+      <div class="insight-icon">${i.icon}</div>
+      <div>
+        <div class="insight-title" style="color:${i.col}">${i.title}</div>
+        <div class="insight-desc">${i.desc}</div>
+      </div>
+    </div>`).join('');
+
+  // Habit breakdown
+  let bkHtml='';
+  HABITS.forEach(h=>{
+    const p=habitPcts[h.id].total?Math.round(habitPcts[h.id].done/habitPcts[h.id].total*100):0;
+    bkHtml+=`<div class="habit-stat-row">
+      <div class="habit-stat-name">${h.emoji} ${h.name}</div>
+      <div class="habit-stat-bar-wrap"><div class="habit-stat-bar" style="width:${p}%"></div></div>
+      <div class="habit-stat-pct">${p}%</div>
+    </div>`;
+  });
+  document.getElementById('habitBreakdown').innerHTML = bkHtml;
+}
+
+// ─── VIEW SWITCHER ───────────────────────────────────────────
+function showView(v) {
+  currentView = v;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    t.classList.toggle('active', (i===0&&v==='calendar')||(i===1&&v==='trends'));
+  });
+  document.getElementById('calendarView').classList.toggle('active', v==='calendar');
+  document.getElementById('trendsView').classList.toggle('active', v==='trends');
+  if(v==='trends') renderTrends();
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+async function init() {
+  // Show loading state immediately with cached data
+  try { data = JSON.parse(localStorage.getItem('habitData') || '{}'); } catch { data = {}; }
+  renderStats();
+  renderCalendar();
+
+  // Then fetch fresh from Supabase and re-render
+  data = await loadDataRemote();
+  localStorage.setItem('habitData', JSON.stringify(data));
+  renderStats();
+  renderCalendar();
+  if (currentView === 'trends') renderTrends();
+}
+init();
+</script>
+</body>
+</html>
